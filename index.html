@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Interrogation — A Detective Story</title>
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─────────────────────────────────────────
+       ROOT VARIABLES & RESET
+    ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #1a1208;
+      --paper:      #f5edd6;
+      --paper-dark: #e8d9b5;
+      --aged:       #c9a96e;
+      --red:        #8b1a1a;
+      --dim:        #6b5c3e;
+      --shadow:     rgba(0,0,0,0.45);
+      --glow:       rgba(201,169,110,0.18);
+
+      --font-title: 'Special Elite', cursive;
+      --font-body:  'Courier Prime', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: #0d0a05;
+      color: var(--ink);
+      font-family: var(--font-body);
+      overflow: hidden;
+    }
+
+    /* ─────────────────────────────────────────
+       NOISE OVERLAY
+    ───────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.6;
+    }
+
+    /* ─────────────────────────────────────────
+       SCENE WRAPPER  (the "desk lamp" vignette)
+    ───────────────────────────────────────── */
+    #scene {
+      position: fixed; inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(ellipse 60% 50% at 50% 30%,
+          rgba(255,220,130,0.13) 0%,
+          transparent 70%),
+        #0d0a05;
+    }
+
+    /* ─────────────────────────────────────────
+       DOSSIER / PAPER CARD
+    ───────────────────────────────────────── */
+    #dossier {
+      position: relative;
+      width: min(720px, 96vw);
+      max-height: 92vh;
+      background: var(--paper);
+      padding: 48px 52px 40px;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.25),
+        0 2px 4px var(--shadow),
+        0 8px 32px var(--shadow),
+        inset 0 0 80px rgba(0,0,0,0.06);
+      border-radius: 2px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--aged) transparent;
+
+      /* paper texture */
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 27px,
+          rgba(0,0,0,0.04) 27px,
+          rgba(0,0,0,0.04) 28px
+        ),
+        linear-gradient(135deg, #f7efda 0%, #ecddb8 100%);
+
+      animation: unfold 0.55s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes unfold {
+      from { opacity: 0; transform: scaleY(0.88) translateY(18px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* red margin line */
+    #dossier::before {
+      content: '';
+      position: absolute;
+      left: 96px; top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(139,26,26,0.25);
+      pointer-events: none;
+    }
+
+    /* ─────────────────────────────────────────
+       HEADER
+    ───────────────────────────────────────── */
+    #header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--aged);
+      position: relative;
+    }
+
+    #header .stamp {
+      font-family: var(--font-title);
+      font-size: 10px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--red);
+      opacity: 0.7;
+      margin-bottom: 6px;
+    }
+
+    #header h1 {
+      font-family: var(--font-title);
+      font-size: clamp(22px, 4vw, 32px);
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    #header .case-no {
+      font-size: 11px;
+      color: var(--dim);
+      margin-top: 4px;
+      letter-spacing: 2px;
+    }
+
+    /* CONFIDENTIAL diagonal stamp */
+    .conf-stamp {
+      position: absolute;
+      top: 8px; right: -12px;
+      font-family: var(--font-title);
+      font-size: 13px;
+      color: var(--red);
+      border: 2px solid var(--red);
+      padding: 3px 8px;
+      transform: rotate(12deg);
+      opacity: 0.55;
+      letter-spacing: 3px;
+      pointer-events: none;
+    }
+
+    /* ─────────────────────────────────────────
+       LOCATION / CHAPTER TAG
+    ───────────────────────────────────────── */
+    #location-tag {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 10px;
+      min-height: 14px;
+      transition: opacity 0.3s;
+    }
+
+    /* ─────────────────────────────────────────
+       CHARACTER PORTRAIT BAR
+    ───────────────────────────────────────── */
+    #character-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+      min-height: 56px;
+    }
+
+    #char-icon {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      border: 2px solid var(--aged);
+      background: var(--paper-dark);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      transition: all 0.35s;
+    }
+
+    #char-info {
+      flex: 1;
+    }
+
+    #char-name {
+      font-family: var(--font-title);
+      font-size: 16px;
+      color: var(--ink);
+    }
+
+    #char-role {
+      font-size: 11px;
+      color: var(--dim);
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    /* ─────────────────────────────────────────
+       NARRATIVE TEXT BOX
+    ───────────────────────────────────────── */
+    #narrative {
+      font-size: 15px;
+      line-height: 1.85;
+      color: var(--ink);
+      margin-bottom: 28px;
+      min-height: 80px;
+      white-space: pre-wrap;
+    }
+
+    /* typewriter cursor */
+    #narrative .cursor {
+      display: inline-block;
+      width: 2px; height: 1em;
+      background: var(--ink);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ─────────────────────────────────────────
+       CLUE STRIP
+    ───────────────────────────────────────── */
+    #clue-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+      min-height: 26px;
+    }
+
+    .clue-tag {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 1px;
+      background: rgba(139,26,26,0.06);
+      animation: fadeSlide 0.4s ease both;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ─────────────────────────────────────────
+       CHOICES
+    ───────────────────────────────────────── */
+    #choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .choice-btn {
+      background: transparent;
+      border: 1px solid var(--aged);
+      padding: 12px 18px;
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      border-radius: 1px;
+      position: relative;
+      transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      line-height: 1.5;
+    }
+
+    .choice-btn::before {
+      content: '›';
+      position: absolute;
+      left: -1px; top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 0;
+      background: var(--red);
+      transition: height 0.2s;
+      font-size: 0;
+    }
+
+    .choice-btn:hover {
+      background: var(--paper-dark);
+      border-color: var(--ink);
+      transform: translateX(3px);
+    }
+
+    .choice-btn:hover::before {
+      height: 100%;
+    }
+
+    .choice-btn:active {
+      transform: translateX(5px);
+    }
+
+    /* label prefix for numbered options */
+    .choice-btn .opt-num {
+      font-family: var(--font-title);
+      color: var(--dim);
+      margin-right: 8px;
+      font-size: 12px;
+    }
+
+    /* ─────────────────────────────────────────
+       NOTEBOOK (clue log) TOGGLE
+    ───────────────────────────────────────── */
+    #notebook-toggle {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--aged);
+      border: 2px solid var(--aged);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      transition: transform 0.2s, background 0.2s;
+      z-index: 100;
+    }
+
+    #notebook-toggle:hover { transform: scale(1.1); background: var(--dim); }
+
+    #notebook {
+      position: fixed;
+      bottom: 88px; right: 28px;
+      width: 260px;
+      background: #fffde8;
+      border: 1px solid var(--aged);
+      border-radius: 2px;
+      padding: 16px 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink);
+      z-index: 99;
+      transform-origin: bottom right;
+      transform: scale(0);
+      opacity: 0;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+    }
+
+    #notebook.open {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    #notebook h3 {
+      font-family: var(--font-title);
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: var(--red);
+      border-bottom: 1px dashed var(--aged);
+      padding-bottom: 6px;
+    }
+
+    #notebook-list {
+      list-style: none;
+    }
+
+    #notebook-list li::before {
+      content: '— ';
+      color: var(--red);
+    }
+
+    #notebook-list li { margin-bottom: 4px; }
+
+    /* ─────────────────────────────────────────
+       SCENE TRANSITION FLASH
+    ───────────────────────────────────────── */
+    #flash {
+      position: fixed; inset: 0;
+      background: #0d0a05;
+      pointer-events: none;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    #flash.active { opacity: 1; }
+
+    /* ─────────────────────────────────────────
+       FOOTER
+    ───────────────────────────────────────── */
+    #footer {
+      margin-top: 32px;
+      padding-top: 14px;
+      border-top: 1px solid var(--paper-dark);
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ─────────────────────────────────────────
+       END SCREEN
+    ───────────────────────────────────────── */
+    #end-screen {
+      position: fixed; inset: 0;
+      background: #0d0a05;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      text-align: center;
+      padding: 40px;
+      position: fixed;
+    }
+
+    #end-screen.visible { display: flex; animation: fadeIn 1s ease both; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    #end-screen h2 {
+      font-family: var(--font-title);
+      font-size: clamp(28px, 5vw, 48px);
+      color: var(--aged);
+      margin-bottom: 16px;
+    }
+
+    #end-screen p {
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: #a09070;
+      max-width: 500px;
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+
+    #end-restart {
+      font-family: var(--font-title);
+      font-size: 14px;
+      letter-spacing: 3px;
+      color: var(--ink);
+      background: var(--aged);
+      border: none;
+      padding: 12px 32px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.2s;
+    }
+
+    #end-restart:hover { background: #e0c070; }
+
+    #end-close {
+      position: absolute;
+      top: 20px; right: 24px;
+      background: transparent;
+      border: 1px solid var(--dim);
+      color: var(--dim);
+      font-size: 18px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+      transition: color 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    #end-close:hover { color: var(--aged); border-color: var(--aged); transform: scale(1.1); }
+
+    /* ─────────────────────────────────────────
+       REVIEW PANEL (transcript log)
+    ───────────────────────────────────────── */
+    #review-toggle {
+      position: fixed;
+      bottom: 88px; right: 28px;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--aged);
+      border: 2px solid var(--aged);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      transition: transform 0.2s, background 0.2s;
+      z-index: 100;
+    }
+    #review-toggle:hover { transform: scale(1.1); background: var(--dim); }
+
+    #review-panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(420px, 95vw);
+      background: #0e0b06;
+      border-left: 1px solid var(--aged);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(105%);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      box-shadow: -8px 0 40px rgba(0,0,0,0.7);
+    }
+    #review-panel.open { transform: translateX(0); }
+
+    #review-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid rgba(201,169,110,0.2);
+      flex-shrink: 0;
+    }
+    #review-panel-header h3 {
+      font-family: var(--font-title);
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--aged);
+    }
+    #review-close {
+      background: transparent;
+      border: none;
+      color: var(--dim);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    #review-close:hover { color: var(--aged); }
+
+    #review-tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(201,169,110,0.15);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .review-tab {
+      font-family: var(--font-body);
+      font-size: 11px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--dim);
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .review-tab:hover { color: var(--aged); }
+    .review-tab.active { color: var(--aged); border-bottom-color: var(--red); }
+    .review-tab.locked { color: #2a2218; cursor: not-allowed; }
+
+    #review-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--aged) transparent;
+    }
+
+    .review-entry {
+      margin-bottom: 18px;
+    }
+    .review-q {
+      font-family: var(--font-title);
+      font-size: 11px;
+      color: var(--red);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .review-a {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: #9a8a6a;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .review-intro {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: #7a6a52;
+      font-style: italic;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed rgba(201,169,110,0.15);
+    }
+    .review-empty {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: var(--dim);
+      font-style: italic;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    /* ─────────────────────────────────────────
+       NAME ENTRY SCREEN
+    ───────────────────────────────────────── */
+    #name-screen {
+      position: fixed; inset: 0;
+      background: #0d0a05;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 400;
+      padding: 40px;
+      animation: fadeIn 1.2s ease both;
+    }
+
+    #name-screen.hidden {
+      animation: fadeOut 0.4s ease both;
+      pointer-events: none;
+    }
+
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+    .name-card {
+      width: min(480px, 94vw);
+      background: var(--paper);
+      background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 27px,
+          rgba(0,0,0,0.04) 27px, rgba(0,0,0,0.04) 28px),
+        linear-gradient(135deg, #f7efda 0%, #ecddb8 100%);
+      padding: 48px 52px;
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.25),
+        0 8px 40px rgba(0,0,0,0.6);
+      border-radius: 2px;
+      text-align: center;
+      position: relative;
+    }
+
+    .name-card::before {
+      content: '';
+      position: absolute;
+      left: 88px; top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(139,26,26,0.22);
+      pointer-events: none;
+    }
+
+    .name-eyebrow {
+      font-family: var(--font-title);
+      font-size: 10px;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--red);
+      opacity: 0.7;
+      margin-bottom: 10px;
+    }
+
+    .name-card h2 {
+      font-family: var(--font-title);
+      font-size: clamp(20px, 4vw, 28px);
+      color: var(--ink);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .name-card .name-sub {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: var(--dim);
+      font-style: italic;
+      margin-bottom: 32px;
+    }
+
+    .name-label {
+      font-family: var(--font-title);
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: block;
+      text-align: left;
+      margin-bottom: 8px;
+    }
+
+    #player-name-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid var(--aged);
+      padding: 8px 4px;
+      font-family: var(--font-title);
+      font-size: 22px;
+      color: var(--ink);
+      text-align: center;
+      outline: none;
+      caret-color: var(--red);
+      transition: border-color 0.2s;
+      margin-bottom: 32px;
+    }
+
+    #player-name-input::placeholder {
+      color: var(--aged);
+      opacity: 0.6;
+    }
+
+    #player-name-input:focus {
+      border-color: var(--red);
+    }
+
+    #name-submit {
+      font-family: var(--font-title);
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: var(--ink);
+      background: var(--aged);
+      border: none;
+      padding: 12px 36px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    #name-submit:hover { background: #dab85a; transform: translateY(-1px); }
+    #name-submit:active { transform: translateY(0); }
+    #name-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .name-badge {
+      position: absolute;
+      top: 12px; right: -10px;
+      font-family: var(--font-title);
+      font-size: 11px;
+      color: var(--red);
+      border: 2px solid var(--red);
+      padding: 2px 7px;
+      transform: rotate(10deg);
+      opacity: 0.5;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Name entry screen -->
+<div id="name-screen" role="dialog" aria-modal="true" aria-label="Enter your detective name">
+  <div class="name-card">
+    <div class="name-badge">CASE FILE</div>
+    <div class="name-eyebrow">Metropolitan Detective Bureau</div>
+    <h2>What is your name,<br>Detective?</h2>
+    <p class="name-sub">Your identity will be recorded in the official case file.</p>
+    <label class="name-label" for="player-name-input">Detective's Name</label>
+    <input
+      id="player-name-input"
+      type="text"
+      maxlength="28"
+      placeholder="e.g. Morgan Kane"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <br>
+    <button id="name-submit" disabled>Begin Investigation</button>
+  </div>
+</div>
+
+<!-- Flash overlay for scene transitions -->
+<div id="flash"></div>
+
+<!-- Notebook button -->
+<button id="notebook-toggle" title="Detective's Notebook" aria-label="Toggle notebook">📓</button>
+<div id="notebook" role="region" aria-label="Clue notebook">
+  <h3>🔍 Notebook</h3>
+  <ul id="notebook-list"><li><em>No clues yet…</em></li></ul>
+</div>
+
+<!-- Review Panel -->
+<button id="review-toggle" title="Review Interrogations" aria-label="Toggle review panel">📋</button>
+<div id="review-panel" role="complementary" aria-label="Interrogation review">
+  <div id="review-panel-header">
+    <h3>📋 Interrogation Review</h3>
+    <button id="review-close" aria-label="Close review">✕</button>
+  </div>
+  <div id="review-tabs"></div>
+  <div id="review-content"><p class="review-empty">No interviews completed yet.</p></div>
+</div>
+
+<!-- End screen -->
+<div id="end-screen" role="dialog" aria-modal="true">
+  <button id="end-close" aria-label="Go back to read the ending">✕</button>
+  <h2 id="end-title">Case Closed</h2>
+  <p id="end-body"></p>
+  <button id="end-restart">Start Over</button>
+</div>
+
+<!-- Main dossier -->
+<div id="scene">
+  <div id="dossier" role="main">
+    <div id="header">
+      <div class="stamp">Metropolitan Detective Bureau</div>
+      <h1 id="game-title">The Wallace Case</h1>
+      <div class="case-no" id="case-no">Case File #2026-0401</div>
+      <div class="conf-stamp">CONFIDENTIAL</div>
+    </div>
+
+    <div id="location-tag"></div>
+
+    <div id="character-bar">
+      <div id="char-icon"></div>
+      <div id="char-info">
+        <div id="char-name"></div>
+        <div id="char-role"></div>
+      </div>
+    </div>
+
+    <div id="narrative" aria-live="polite"></div>
+
+    <div id="clue-strip" aria-label="Clues discovered"></div>
+
+    <div id="choices" role="group" aria-label="Your choices"></div>
+
+    <div id="footer">
+      <span id="footer-scene">Scene 1</span>
+      <span id="footer-clues">Clues: 0</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DETECTIVE TEXT ADVENTURE ENGINE  ·  Pooled Question Edition
+   ───────────────────────────────────────────────────────────────
+   SCENE MODES
+
+   MODE A — "pool" scene (interrogation with free-order questions):
+     id, location, character
+     intro       — text shown once when entering the scene
+     questions   — [ { id, label, text, clue? }, … ]
+                   All shown as buttons simultaneously.
+                   Clicking one shows the answer inline, then the
+                   button disappears.  A "Wrap up" button appears
+                   once every question has been asked.
+     next        — scene id to go to after wrapping up
+     nextLabel   — (optional) custom label for the wrap-up button
+
+   MODE B — "linear" scene (narration / verdict / endings):
+     id, location, character
+     text        — narrative passage (typewritten)
+     clue?       — optional clue added on entry
+     choices     — [ { label, next }, … ]   empty array = ending
+     isEnd?      — true triggers end-screen overlay
+     endTitle / endBody
+═══════════════════════════════════════════════════════════════ */
+
+const SCENES = [
+
+  /* ══════════════════════════════════════════════
+     ACT 0 — BRIEFING
+  ══════════════════════════════════════════════ */
+  {
+    id: "intro",
+    location: "Precinct HQ — Morning, 2 April 2026",
+    character: { icon: "🕵️", name: "Detective {{PLAYER_NAME}}", role: "Protagonist — that's you" },
+    text:
+`"This is an easy case, just breeze through and work on the next," my superior, Richard Ong, placed the file on my desk on top of the pile of files next to it. I nodded as I rubbed my eyes, opening the file on the desk.
+
+The death of a 7 year old boy, Wallace, at 8 p.m. on 1st April 2026. He tripped and hit his head on a rock, leading to his death.
+
+"Just get the statements and let the family get their peace," Richard said. "It's sad that they've lost a son, don't drag it out and cause them more distress."
+
+I nodded and acknowledged as he walked away. I flipped through the file, scanning the list of people related to the case.
+
+Persons of interest: ENZO WONG (7, child), EUGENE (34, teacher), ANNA WONG (38, mother), ERICA GOH (36, victim's mother), JOSH WONG (39, father), SHARYANNE LIM (59, neighbour).
+
+The order of interrogation has been set. I begin.`,
+    choices: "post_interview"
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 1A — ENZO (POOL)
+  ══════════════════════════════════════════════ */
+  {
+    id: "enzo_1",
+    location: "Interrogation Room B — 2 April 2026",
+    character: { icon: "🧒", name: "Enzo Wong", role: "Age 7 — Josh & Anna's son" },
+    intro:
+`Enzo was already seated when I entered the room, sitting quietly with his legs hanging slightly above the ground. Unlike the others, he didn't react to my presence at all — there was no movement, no attempt to acknowledge me, just a stillness that felt almost intentional.
+
+He held a worn stuffed bear tightly against his chest, his fingers curled into its fabric as if he was afraid of letting it go. I took my seat across from him and placed the file on the table. Every now and then, his thumb brushed lightly across the surface of the toy, a small repetitive motion that seemed almost unconscious.
+
+"You have a right to remain silent. Anything you say will be used in the court of law."
+
+There was no response. He kept his head lowered, his gaze fixed entirely on the toy in his hands. Even when I shifted slightly in my chair, his attention didn’t move.
+
+“Hey, Enzo,” I said, softening my tone slightly. “Do you go to school nearby?”
+
+No response at first.
+
+“What’s your favourite thing to do in school?”
+
+Still quiet.
+
+I paused, glancing briefly at the bear in his hands. “Do you like drawing?” For a moment, his fingers shifted slightly against the fabric, a small movement that was easy to miss.
+
+“Is that your favourite toy?”
+
+He didn’t answer, but his grip tightened a little.
+
+“Do you bring it with you everywhere?”
+
+This time, he gave a small nod. It was subtle, almost hesitant, but it was there.
+
+“Does it have a name?”
+
+Enzo paused, but soon muttered softly, "Brownie."
+
+For the first time, he looked up briefly, just for a second, before lowering his gaze again. I waited, but he didn’t say anything else.
+
+After a moment, I straightened slightly in my seat, letting the silence settle.
+
+“Alright,” I said, my tone returning to neutral. “Let’s start from the beginning.”
+
+`,
+    questions: [
+      {
+        id: "enzo_q1",
+        label: "Where were you last night when the incident took place?",
+        text: `No answer.\n\nHis fingers tightened slightly around the bear.`
+      },
+      {
+        id: "enzo_q2",
+        label: "What happened at the playground?",
+        text: `Silence.\n\nI waited for a moment, but Enzo didn't react. His fingers tightened slightly around the bear.`
+      },
+      {
+        id: "enzo_q3",
+        label: "Who were you with last night?",
+        text: `Still nothing.\n\nHis head tilted slightly downward, almost as if he was focusing on something only he could hear.`
+      },
+      {
+        id: "enzo_q4",
+        label: "Did Wallace take something from you?",
+        text: `Enzo's grip on the bear tightened again, his fingers pressing deeper into the fabric. But he did not speak.`
+      },
+      {
+        id: "enzo_q5",
+        label: "Did you try to take it back?",
+        text: `No response. However this time, there was a small movement. A slight shift of his shoulders.\n\nI leaned forward slightly, my attention drawn to the toy. The bear looked worn, its fabric slightly faded at the edges. There was a small seam running along its back.\n\nOne of its button eyes was missing.`
+      },
+      {
+        id: "enzo_q6",
+        label: "Can I take a look at the toy?",
+        text: `"No."\n\nIt was the first word he said. Quick and immediate. He pulled the bear closer to his chest, his fingers tightening around it.\n\n"Why not?"\n\nNo answer. He lowered his head again, his grip still firm, as if letting go was not an option.\n\nThe room fell quiet.`,
+        clue: "Enzo's bear — one button eye missing, refuses all access"
+      }
+    ],
+    next: "enzo_end",
+    nextLabel: "Close notebook — leave the room"
+  },
+
+  {
+    id: "enzo_end",
+    location: "Interrogation Room B",
+    character: { icon: "🧒", name: "Enzo Wong", role: "Age 7 — Josh & Anna's son" },
+    text: `I close my notebook. The boy won't speak — not today. But something about the bear stays with me.`,
+    choices: "post_interview"
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 1B — EUGENE (POOL)
+  ══════════════════════════════════════════════ */
+  {
+    id: "eugene_1",
+    location: "Interrogation Room A — 2 April 2026",
+    character: { icon: "👨‍🏫", name: "Eugene", role: "Age 34 — Wallace & Enzo's teacher" },
+    intro:
+`Eugene was already seated when I entered the room, sitting upright with his hands resting on the table. He didn’t look particularly nervous, but there was a slight tension in the way his fingers were pressed together, like he was trying to stay composed. His shirt was slightly wrinkled and his sleeves were rolled up unevenly, which made it seem like he had come straight from a long day at work. There were faint creases along his collar, and his posture suggested that he hadn’t had much time to rest before being called in. 
+
+When he looked up, his expression was calm, though there was a small hint of impatience in his eyes. "I was told this wouldn't take too long," he said, glancing briefly at the recorder before looking back at me.
+
+"It won't," I replied as I turned the device on. "We just need some clarification regarding two of your students."
+
+He nodded slightly and leaned back in his chair, though his fingers remained loosely pressed together, as if he hadn’t fully relaxed.`,
+    questions: [
+      {
+        id: "eugene_q1",
+        label: "Where were you when you received the news about Wallace?",
+        text: `"I was at home," Eugene said. "The school informed us early this morning. We were told to keep things contained until more details came out." \n\n He paused briefly before adding, “There’s usually a protocol for situations like this, especially when it involves students. We’re not supposed to discuss it openly until everything is confirmed.”
+`
+      },
+      {
+        id: "eugene_q2",
+        label: "How well do you know Wallace?",
+        text: `Eugene let out a small breath.\n\n"Well enough," he said. "He's… quite noticeable."\n\n"In what way?"\n\n"He tends to cause trouble," Eugene replied. "Taking things from other students, pushing them around, trying to get a reaction. We've had to speak to his parents a few times about it. It’s not that he doesn’t understand what he’s doing, but he doesn’t seem to take it seriously either."`,
+        clue: "Wallace — pattern of bullying, taking others' belongings at school"
+      },
+      {
+        id: "eugene_q3",
+        label: "What can you tell me about Enzo?",
+        text: `Eugene paused slightly before answering.\n\n"Enzo is different," he said. "He keeps to himself most of the time. Doesn't really interact with others unless he has to."\n\n"Most of the time?"\n\nHe shifted a little in his seat.\n\n"When something doesn't go his way, his reaction can be a bit strong," Eugene added. "Not often, but when it happens, it stands out."`
+      },
+      {
+        id: "eugene_q4",
+        label: "Can you give an example of Enzo's reaction?",
+        text: `"There was an incident a while back," he said. "Wallace took something from him… a toy, I think. A bear."\n\nEugene glanced down briefly before continuing.\n\n"Enzo didn't just ask for it back. He tried to take it forcefully, raised his voice, pushed Wallace. It was more intense than what you'd expect."\n\n He paused slightly. “It wasn’t just frustration. It felt… more than that.”`,
+        clue: "Enzo reacted violently when Wallace took his bear at school"
+      },
+      {
+        id: "eugene_q5",
+        label: "Does Enzo usually bring that toy to school?",
+        text: `"All the time," Eugene replied. "He carries it everywhere, even during lessons."\n\n"Does he interact with it?"\n\nEugene hesitated for a moment.\n\n"Yes," he said. "He talks to it sometimes. Quietly. Like he's having a conversation."`
+      },
+      {
+        id: "eugene_q6",
+        label: "Did Wallace ever take the toy more than once?",
+        text: `Eugene gave a small shrug.\n\n"I can't say for sure," he said. "But Wallace tends to repeat things if he finds them funny."`,
+        clue: "Wallace likely repeatedly targeted Enzo's bear"
+      },
+      {
+        id: "eugene_q7",
+        label: "How would you describe Enzo's behaviour overall?",
+        text: `Eugene paused, choosing his words carefully. "He's not disruptive," he said. "Just… distant. But there are moments where his reactions don't quite match the situation."\n\nHe leaned back slightly after answering, his fingers pressing together again. "There are some behaviours," he added quietly, "that don't come out of nowhere."`,
+        clue: "Eugene: Enzo's reactions are disproportionate — 'don't come out of nowhere'"
+      }
+    ],
+    next: "eugene_end",
+    nextLabel: "Thank Eugene — end the session"
+  },
+
+  {
+    id: "eugene_end",
+    location: "Interrogation Room A",
+    character: { icon: "👨‍🏫", name: "Eugene", role: "Age 34 — Wallace & Enzo's teacher" },
+    text: `I note the way he stops himself from saying more. He looks like a man who has seen something and decided it was not his place to say it.\n\nI stand. He nods once, gathering his jacket from the back of the chair. He pauses at the door.\n\n"Whatever happened to Wallace…" he says, then stops. "He wasn't a bad kid. Just not careful."`,
+    choices: "post_interview"
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 2A — ANNA WONG (POOL)
+  ══════════════════════════════════════════════ */
+  {
+    id: "anna_1",
+    location: "Interrogation Room A — 2 April 2026",
+    character: { icon: "👩", name: "Anna Wong Jia Qi", role: "Age 38 — Enzo's mother" },
+    intro:
+`A woman was seated at the interrogation table, her back straight and her hands resting neatly in front of her. I watched through the glass as she adjusted the cuff of her sleeve, her fingers brushing over the fabric as if it gave her something to focus on. She didn't look nervous, but she didn't look relaxed either. It was the kind of stillness that felt controlled rather than natural.
+
+Her attire was a simple blouse and skirt, the sort that wouldn't stand out in any office setting. Her hair was tied back neatly, and she looked calm, gaze steady, although her eyes shifted slightly whenever certain names were mentioned. I had met people like her before — people who thought of their words carefully but weren't unclear; rather, they knew exactly what to say.
+
+"You have a right to remain silent, anything you say will be used in the court of law," I said.
+
+She nodded once.
+
+"Ms Anna, you are here today regarding the death of Wallace Goh, your son's friend, a 7 year old boy who was found at the playground last night at your block."
+
+She didn't respond, only straightened slightly in her seat.`,
+    questions: [
+      {
+        id: "anna_q1",
+        label: "Where were you last night when the incident took place?",
+        text: `"I was at home," Anna replied, her voice calm as she kept her hands together. "I was preparing dinner."`
+      },
+      {
+        id: "anna_q2",
+        label: "Who was with Wallace that night?",
+        text: `"Josh brought the boys downstairs," Anna said, her voice even. "It's something he does usually when Wallace's parents are busy. They help each other out."`
+      },
+      {
+        id: "anna_q3",
+        label: "So Enzo was with them as well? What are they like together?",
+        text: `She paused, just long enough to notice. "Yes, he went along," she said. "Enzo doesn't usually like going out, but Josh encourages him. They've played together before. Enzo is quieter, but there wasn't any issue."\n\nHer fingers pressed together slightly as she spoke.`
+      },
+      {
+        id: "anna_q4",
+        label: "How is Josh with Enzo?",
+        text: `Anna's gaze lowered briefly before returning. "Josh is… patient with him," she said carefully. "Enzo listens to him more than most people. He always tries to do what's best for him, he's the dad."`
+      },
+      {
+        id: "anna_q5",
+        label: "Did Josh mention anything unusual when he came back?",
+        text: `"He said there had been an accident," Anna replied, adjusting her sleeve again. "He seemed shaken. Anyone would be."\n\n"An accident? Did he explain what happened?"\n\n"He said Wallace fell," she said, her tone remaining measured. "He told me he was trying to manage both boys, and things happened quickly."\n\nShe paused before adding, quieter this time, "Josh was there. He saw what happened."`
+      },
+      {
+        id: "anna_q6",
+        label: "Did anything seem off when Enzo came home?",
+        text: `"He didn't say anything," Anna replied. "He went straight to his room. That's normal for him. If he's tired or overwhelmed, he just keeps to himself."`
+      },
+      {
+        id: "anna_q7",
+        label: "We've heard Wallace sometimes took things from other children. Did that involve Enzo?",
+        text: `"I've heard about that," she said, her tone unchanged. "Children argue over small things. It didn't seem serious. Enzo usually just holds onto his things more when that happens."\n\n"Holds onto what things?"\n\nAnna hesitated slightly. "His belongings," she said. "Mostly his toy. He doesn't like people touching it."\n\nThere is something deliberate in how she says it. Not protective — careful. Like a woman who has rehearsed which details to volunteer.`,
+        clue: "Anna: Enzo is extremely protective of his toy bear"
+      }
+    ],
+    next: "anna_end",
+    nextLabel: "Conclude — end the session with Anna"
+  },
+
+  {
+    id: "anna_end",
+    location: "Interrogation Room A",
+    character: { icon: "👩", name: "Anna Wong Jia Qi", role: "Age 38 — Enzo's mother" },
+    text: `She straightens her sleeve one final time as I close my folder. Everything she said was technically an answer. Nothing she said was fully the truth.\n\nI note it and move on.`,
+    choices: "post_anna"
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 2B — ERICA GOH (POOL)
+  ══════════════════════════════════════════════ */
+  {
+    id: "erica_1",
+    location: "Interrogation Room B — 2 April 2026",
+    character: { icon: "😰", name: "Erica Goh", role: "Age 36 — Wallace's mother" },
+    intro:
+`Erica had far less control when she sat down. The chair scraped slightly as she pulled it closer, and, almost immediately, her arms folded as she leaned forward. She appeared tired with slightly swollen eyes, but there was something sharper beneath it. Not grief alone, but frustration. She shifted in her seat, glanced around briefly, and then settled her gaze on me. She didn't seem to mind, unlike Anna, suppressing her thoughts. If anything, she looked like she had already decided what she wanted to say.
+
+"You have a right to remain silent, anything you say will be used in the court of law," I said.
+
+She nodded, though her expression didn't change much.
+
+"You are here regarding the death of your son, Wallace Goh."
+
+She exhaled quietly and leaned back slightly.`,
+    questions: [
+      {
+        id: "erica_q1",
+        label: "Where were you last night when the incident took place?",
+        text: `"I was still at work," Erica said, her voice quick. "I had to stay late, so Wallace was with Josh. He watches him sometimes when we're busy."`
+      },
+      {
+        id: "erica_q2",
+        label: "You were comfortable with that arrangement?",
+        text: `"My husband was," she said, adjusting her arms tighter. "He trusts Josh. They spend time together, so he believes nothing would've happened."\n\nShe paused before adding, quieter, "I didn't completely agree, but I didn't stop it either."\n\n"Why not?"\n\nErica leaned back slightly. "Josh was fine," she said. "It wasn't him I was unsure about."`
+      },
+      {
+        id: "erica_q3",
+        label: "Who were you unsure about?",
+        text: `"The boy," she replied, her tone sharpening slightly. "Enzo."\n\n"What about Enzo made you uncomfortable?"\n\n"There's something off about him," Erica said, leaning forward. "He keeps to himself too much. And the way he reacts… sometimes it feels too intense for small things."`
+      },
+      {
+        id: "erica_q4",
+        label: "How did Wallace and Enzo usually get along?",
+        text: `"They played because they lived near each other," she said. "Wallace gets along with most children. Enzo… not really."\n\nShe glanced away briefly before continuing.\n\n"Wallace liked to play around. He might've taken toys before, small things. He didn't always think."`
+      },
+      {
+        id: "erica_q5",
+        label: "Did Wallace take Enzo's things too?",
+        text: `She hesitated. "Maybe," she admitted. "I've seen Enzo with that bear before. Wallace probably noticed it too. It makes noise, doesn't it?"`,
+        clue: "Enzo's bear makes noise — Wallace knew about it, Erica confirms"
+      },
+      {
+        id: "erica_q6",
+        label: "Did Wallace ever say anything specific about Enzo?",
+        text: `"He said Enzo was strange," she replied. "Quiet. Protective over his things."`
+      },
+      {
+        id: "erica_q7",
+        label: "Do you think Josh knows more than he's saying?",
+        text: `Erica's expression hardened slightly. "If Josh was there, then he knows what happened."\n\nShe held that look for a second before adding, lower this time, "And if it came down to his son… I think he'd protect him. So would I."\n\nThe last sentence hung in the air.`,
+        clue: "Erica: 'If it came down to his son, Josh would protect him'"
+      }
+    ],
+    next: "erica_end",
+    nextLabel: "End the session with Erica"
+  },
+
+  {
+    id: "erica_end",
+    location: "Interrogation Room B",
+    character: { icon: "😰", name: "Erica Goh", role: "Age 36 — Wallace's mother" },
+    text: `She doesn't move to leave when I close my folder. She just sits there, arms still folded, looking at the table.\n\n"Find out what really happened," she says quietly, as I stand. "My son deserves that."`,
+    choices: "post_interview"
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 2C — SHARYANNE (POOL)
+  ══════════════════════════════════════════════ */
+  {
+    id: "sha_1",
+    location: "Interrogation Room A — 2 April 2026",
+    character: { icon: "👵", name: "Sharyanne Lim Bek Hua", role: "Age 59 — Neighbour (Auntie Sha)" },
+    intro:
+`Sharyanne was already seated when I walked in.
+
+Most witnesses wait with their hands folded or their eyes down with pursed lips but Sharyanne has none of that. She sat with her legs spread wide, one hand propped under her chin, and the other resting flat next to her handbag which she had placed on the table in front of her.
+
+"Aiyo finally, I was waiting almost 30 minutes already, you know," she complained as I set my folder down across from her and pulled out my chair.
+
+"I apologise for the wait, Mrs Sharyanne – " I said as I settled into my seat.
+
+"Auntie Sha la. Everyone calls me that." She cut me off as if correcting me was the most natural thing in the world. "Mrs Sharyanne sounds like I'm in trouble."
+
+"Right. Auntie Sha. Thank you for coming in."
+
+"Of course I come la," she said, already nodding before I'd finished the sentence. "This kind of thing, how can don't come? I know them for how long already." 
+
+“Ok Auntie Sha. As you may already be aware, we are currently investigating the death of Wallace Goh, a case that is directly linked to your neighbours. Your testimony today may prove to be significant.” I turned the recording device on the table toward her. “Everything said in this room will be recorded and may be used as a part of the formal court proceedings. Do you understand?” 
+
+“Aiyo Wallace ah, I always see him come and play with Enzo, you know? So sad, why did he suddenly die.” she said loudly, shaking her head in disbelief. “But ya la I understand just ask whatever you want to know la hor.”`,
+    questions: [
+      {
+        id: "sha_q1",
+        label: "How long have you lived next to Mr Josh and his family?",
+        text: `"Wah 10 years already leh. Ten years you know!" She exclaimed, her eyes going wide, as though the number itself delighted her. She sat forward slightly in her seat. "I moved here in 2016, Josh and Anna were already here."`
+      },
+      {
+        id: "sha_q2",
+        label: "How would you describe them as neighbours?",
+        text: `"A very nice young couple lor," she said immediately, and then paused, tilting her head in the particular way of someone who wants to appear fair.\n\n"Josh is very helpful one, last time my kitchen pipe burst, at midnight some more, he came to help and never complain at all. This type of neighbour is hard to find nowadays."\n\n"What about Anna?"\n\n"Anna ah, she very polite one," she smiled. "Everytime she sees me sure say hello and goodbye. Sometimes we ask each other if got any extra food when we run out of it."\n\n"And Enzo?"\n\nSharyanne's expression shifted — almost nothing — just a small pull at the corner of her mouth.\n\n"He ah… I think this boy got some problem. Sometimes he is ok, but hor sometimes I think he is a little weird and aggressive."`
+      },
+      {
+        id: "sha_q3",
+        label: "Is there anything specific you encountered with Enzo that led you to say that?",
+        text: `"Got la if not why I say that," she leaned forward slightly. "One time ah, I saw Enzo holding his bear in the corridor. I complimented and took it from his hands just to take a look only cause cute mah the bear… end up he screamed like crazy and snatched it back eh."\n\n"Tsk you know what?" She dug into her bag and pulled out a photo, slapping it flat on the table like she'd been waiting for this moment. "You see what I found the next morning when I was going out to buy groceries. A dead bird hanging on my gate hor!"\n\n"I don't want touch any of his things already la." \n\n “Did you tell his parents about this incident?” \n\n “Have is have la” she replied. “I asked them why Enzo like that…scared he got some mental problem. This one need to cure one you know?” She said it plainly, without malice.`,
+        clue: "Dead bird on Auntie Sha's gate — after Enzo's reaction to toy being touched"
+      },
+      {
+        id: "sha_q4",
+        label: "How did they react to his behaviour?",
+        text: `"Josh ah, he very calm one," she said. "He apologised to me and said Enzo is like that, don't worry. He even offered to treat me a meal, I think very sincere ah cause free meal leh."\n\n"You only told Josh?" I asked.\n\n"No la, I told both of them but Anna ah…" she paused.\n\n"She very sensitive when come to Enzo one. She scolded Josh in front of me, say why he always let people say bad thing about their son." She shook her head slowly.`
+      },
+      {
+        id: "sha_q5",
+        label: "Have you noticed anything else unusual recently?",
+        text: `Sharyanne's eyes lit up and she straightened in her seat, like something had just clicked in her mind.\n\n"But I noticed la," she said, leaning back. "Recently, Josh and Anna fight almost every night. I can hear them quarrelling through the wall."\n\n"And Enzo also, since a few years back even without his parents quarrelling ah, I can always hear him screaming very loudly at home you know. That kind of scream…" she trailed off, pressing her lips together. "Is not like normal child one."`,
+        clue: "Josh & Anna argue every night — Enzo screaming abnormally at home for years"
+      }
+    ],
+    next: "sha_end",
+    nextLabel: "Wrap up — thank Auntie Sha"
+  },
+
+  {
+    id: "sha_end",
+    location: "Interrogation Room A",
+    character: { icon: "👵", name: "Sharyanne Lim Bek Hua", role: "Age 59 — Neighbour (Auntie Sha)" },
+    text: `She stands and slings her handbag over her shoulder, already looking like she has somewhere to be.\n\n"Aiyo wah, so many questions. Next time call me earlier la, I still got market to go." She pauses at the door. "But eh… you find out what happened okay? This kind of thing, whole block also worried."`,
+    choices: "post_interview"
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 3 — JOSH WONG (POOL)
+  ══════════════════════════════════════════════ */
+  {
+    id: "josh_1",
+    location: "Interrogation Room B — 2 April 2026",
+    character: { icon: "🧔", name: "Josh Wong Zhang Han", role: "Age 39 — Enzo's father" },
+    intro:
+`Josh's gaze locked with mine the moment he came through the door. He acknowledged me grimly and sat across the table, the spotlight in the middle of the room casting harsh shadows on his face.
+
+I flipped through the case file and quickly read through the details.
+
+"You made the call didn't you?" I asked as I looked up at him.
+
+"What?"
+
+"The call to the police," I replied, and he nodded sadly.
+
+"It was unfortunate, whatever happened to Wallace," he sighed as he leaned back in his chair, "I was on my phone handling a business call on the side when I saw him slip at the playground, I… I should've been closer, now Ah Huat's kid is gone."
+
+"Oh? He slipped?"
+
+Josh nodded as he ran his hand through his hair, "yea, he tripped on a rock."
+
+"Okay," I nodded, and took another look at the list of questions.
+
+"Anything you say today will be recorded and be used in formal court proceedings."`,
+    questions: [
+      {
+        id: "josh_q1",
+        label: "Was it just you and Wallace at the playground?",
+        text: `"No," he answered slowly, "my son was with us, and he saw how Wallace fell."`
+      },
+      {
+        id: "josh_q2",
+        label: "Do you often bring Wallace down to the playground?",
+        text: `"Yea usually once a week, cause Ah Huat and Erica both have to work late," Josh said, "so on Wednesdays I usually bring him down to the playground."`
+      },
+      {
+        id: "josh_q3",
+        label: "What's your relationship with Wallace?",
+        text: `"Just my friend's kid, I see him pretty often because I'm close to Ah Huat, and we also live near each other," Josh replied.\n\n"Do both of your kids meet often?" I asked and he nodded.\n\n"Yea we usually let them mingle, they seemed to be pretty good friends," Josh smiled fondly, "you know how kids can befriend anyone, they're like that."`
+      },
+      {
+        id: "josh_q4",
+        label: "Can you run me through the series of events — how did he fall?",
+        text: `"Okay, you know how kids play 'catching'? Wallace was walking backwards looking at Enzo when he tripped backwards and hit his head on a rock," Josh scratched his neck and grimaced as he recounted the events.\n\n"What did he trip on?"\n\n"I didn't see, I think his shoe caught on the floor," Josh tilted his head as he tried to recall.`
+      },
+      {
+        id: "josh_q5",
+        label: "You were on a business call — where exactly were you standing?",
+        text: `"At the edge of the playground where there were benches, I was sitting and watching the two of them play," Josh replied.\n\nI write it down. Sitting at the edge. On a business call. Ten minutes, by his own admission.\n\nTen minutes is a long time.`,
+        clue: "Josh was on a 10-minute business call, away from the boys when Wallace died"
+      },
+      {
+        id: "josh_q6",
+        label: "Did Wallace and Enzo bring anything with them to the playground?",
+        text: `"Enzo brought his stuffed bear, he brings it everywhere, even to school," Josh sighed, "the teachers have told us that it's bad for kids to be overly dependent on a toy, but we don't have a choice I guess."\n\n"Wallace just brought his bag," Josh answered.`
+      },
+      {
+        id: "josh_q7",
+        label: "Have you heard about Wallace taking things from other kids at school?",
+        text: `"Really?" Josh's eyes widened slightly, "I didn't know but he did sometimes use and borrow Enzo's things when they were playing."\n\n"Oh? Like what things?"\n\n"Small things, like crayons, colour pencils, Power Ranger figurines," Josh shrugged, "I just assumed Enzo was sharing them with him."\n\n"But I can see that," Josh frowned ever so slightly, "that Wallace would take things without permission."`
+      },
+      {
+        id: "josh_q8",
+        label: "What was Wallace and Enzo's relationship really like?",
+        text: `"I think I said it just now? They seem to be good friends," Josh replied quickly.\n\n"'Seem to be'?" I questioned, and I could visibly see him stiffen.\n\n"I mean, they argue sometimes, but that's what kids do you know?" Josh faked a soft laughter to ease the tension, but I remained stoic.\n\n"What do they argue about?"\n\n"I'm not sure."\n\n"But you have seen and heard them argue?"\n\n"Enzo… he tells me that Wallace is the only one that talks to him in class," Josh slowly said, "they don't really argue but they're kids, arguments will always be about small things."`
+      }
+    ],
+    next: "josh_photos",
+    nextLabel: "Present the evidence photographs"
+  },
+
+  /* ── Josh / photos — linear then wrap ───────── */
+  {
+    id: "josh_photos",
+    location: "Interrogation Room B",
+    character: { icon: "🧔", name: "Josh Wong Zhang Han", role: "Age 39 — Enzo's father" },
+    text:
+`I opened the case file on my lap and took out a few pictures to place on the table: a bloody and sharp rock, a few stationery items from Wallace's backpack consisting of coloured pens, a button that had dropped, and a water bottle.
+
+Josh leaned in, going still as he analysed the pictures. His eyes darted between the images, his arm propping his head up under his chin.
+
+"Aren't those Enzo's colour pencils? And the button, that's—" Josh cut himself off, and for the first time that evening, it seemed as if something had clicked in his head. His eyes shot up at me.
+
+"That's… Enzo must have packed them into Wallace's bag," he said finally, his voice measured. Too measured. "You know how kids are, they swap things."`,
+    clue: "Enzo's colour pencils found in Wallace's bag — Josh's explanation is too quick",
+    choices: [
+      { label: "The button. Whose is it?", next: "josh_button" }
+    ]
+  },
+
+  {
+    id: "josh_button",
+    location: "Interrogation Room B",
+    character: { icon: "🧔", name: "Josh Wong Zhang Han", role: "Age 39 — Enzo's father" },
+    text:
+`Josh's hand moved instinctively to his collar before he caught himself and placed it flat on the table. He cleared his throat.
+
+"I'm not sure."
+
+I let the silence sit between us for a long moment, then slid another photograph across the table. The autopsy report had come in two hours before Josh walked through the door.
+
+"The coroner's findings," I said. "Wallace didn't die from the fall."
+
+"There was a first impact that he died from, and a secondary impact that was made to cover up the first."
+
+Something shifted in Josh's expression. Not guilt, not quite. More like a man doing arithmetic in his head.
+
+Josh pressed his lips, saying calmly, "kids are rough you know? They must have been playing roughly."`,
+    clue: "Autopsy: two impacts — death from FIRST, second impact staged to cover it up",
+    choices: [
+      { label: "How exactly were they playing?", next: "josh_final_q" }
+    ]
+  },
+
+  {
+    id: "josh_final_q",
+    location: "Interrogation Room B",
+    character: { icon: "🧔", name: "Josh Wong Zhang Han", role: "Age 39 — Enzo's father" },
+    intro:
+`"Like I said, they were playing 'catching' when Wallace turned to taunt Enzo and walked backwards, he tripped on a rock and hit his head," Josh said quickly.
+
+Two more questions. I press on.`,
+    questions: [
+      {
+        id: "josh_fq1",
+        label: "Was Wallace holding or doing anything to taunt Enzo?",
+        text: `Josh paused for a bit before he answered, "he held Enzo's bear, the stuffed toy. Maybe Enzo let him hold it and Wallace ran off with it."\n\nI wrote that down without looking up. Earlier, Josh said he was on a business call and didn't see what happened. Now he is describing Wallace holding the bear — taunting Enzo with it.\n\nHe couldn't have seen both.`,
+        clue: "CONTRADICTION: Josh claims he didn't see the fall, yet describes Wallace holding the bear"
+      },
+      {
+        id: "josh_fq2",
+        label: "You said you were on a call. How did you see all of this?",
+        text: `Josh's jaw tightened slightly. "I… I stepped off the call briefly. I saw the tail end of it."\n\nA pause.\n\n"Which is it, Mr Wong? Were you on the call, or were you watching?"\n\nHe didn't answer. He rubbed his eyes and looked at the table.`
+      }
+    ],
+    next: "josh_end",
+    nextLabel: "Conclude — finish Josh's statement"
+  },
+
+  {
+    id: "josh_end",
+    location: "Interrogation Room B",
+    character: { icon: "🧔", name: "Josh Wong Zhang Han", role: "Age 39 — Enzo's father" },
+    text:
+`"Okay, do you have anything to add to your statement?" I asked as I took back the pictures.
+
+Josh opened his mouth, but he paused as he looked up at me and closed it.
+
+"What happened to Wallace was really a pity, I only wished that I was closer and could've prevented his fall," Josh brushed through his hair again, before rubbing his tired eyes.
+
+I tidied the evidence and finished recording the statement.
+
+Josh nodded once and stood, the chair dragging against the floor as he did. He turned to sigh before walking out, sparing a glance back.`,
+    choices: [
+      { label: "Review everything — decide your verdict", next: "verdict_hub" }
+    ]
+  },
+
+  /* ══════════════════════════════════════════════
+     ACT 4 — VERDICT HUB
+  ══════════════════════════════════════════════ */
+  {
+    id: "verdict_hub",
+    location: "Your Desk — Late Evening",
+    character: { icon: "🕵️", name: "Detective {{PLAYER_NAME}}", role: "Reviewing the case" },
+    text:
+`I lean back and look at my notes one last time.
+
+A seven year old boy. A stuffed bear. A playground at night.
+
+The autopsy says two impacts — the first killed him, the second staged a cover-up.
+
+Josh claims he was on a business call. He also describes exactly what Wallace was holding when he fell.
+
+The bear's eye is missing. A button was found in Wallace's bag alongside Enzo's colour pencils.
+
+Auntie Sha saw the dead bird. Eugene described Enzo's violent reaction when the bear was taken. Erica said: "If it came down to his son, he'd protect him."
+
+Anna adjusted her sleeve every time Josh's name came up.
+
+Three endings are possible. My call.`,
+    choices: [
+      { label: "ENDING A — It was an accident. Close the case.", next: "ending_accident" },
+      { label: "ENDING B — Josh staged the scene. Arrest him.", next: "ending_josh" },
+      { label: "ENDING C — Bring Enzo back.", next: "ending_enzo" }
+    ]
+  },
+
+  /* ══════════════════════════════════════════════
+     ENDINGS
+  ══════════════════════════════════════════════ */
+  {
+    id: "ending_accident",
+    location: "Your Desk",
+    character: { icon: "📁", name: "Case Closed", role: "Ending A — Accidental Death" },
+    text: `I leaned back and looked at my notes one last time. 
+
+A seven year old boy, a stuffed bear, and at the playground. 
+
+Everyone who knew Enzo agreed that he was an aggressive and extreme child. Even his parents knew it. It was a boy who didn’t share well, who reacted too strongly and fought back when someone took what was his. 
+
+“Yea, and Wallace had a habit of taking things that didn’t belong to him…” I shrugged and shook my head. 
+
+Linking their characters, Wallace might have really just been too engrossed in running away from Enzo with the bear to watch where he was going. 
+
+“Maybe that was all it was,” I murmured. 
+
+Before I could even get up, my superior walked in and dropped the folder on my desk.
+
+“Accidental death. Close it,” he said firmly and walked out before I could respond.
+
+I took one final look at the witness statements and photographs before shutting the folder.
+
+“Nothing in here proves that this was a murder,” I reasoned.
+
+No one kills a child over a toy.`,
+    
+    choices: [
+      { label: "But what really happened that night? — See the truth", next: "true_ending" }
+    ]
+  },
+
+  {
+    id: "ending_josh",
+    location: "Interrogation Room B — Second Interrogation",
+    character: { icon: "🧔", name: "Josh Wong Zhang Han", role: "Age 39 — Under formal arrest" },
+    text: `After presenting the reports, witness statements and Josh’s own contradictions in front of him, I watched his composure begin to crack. As the amount of evidence placed in front of him increased, the harder it became for him to keep his timeline together. 
+
+His answers got shorter, his breathing got heavier, and for the first time, Josh looked afraid more than feeling sad. With no one able to fully uncover what truly happened in those missing moments, the evidence was enough to prove his cover-up. 
+
+Josh got led away, and surprisingly he never fought it, never looked back. Instead, there was something almost unsettling in the way his shoulders finally loosened, not getting caught but a relief. I don’t know… maybe I’m just too tired from the investigations. At least it’s over now…
+`,
+    choices: [
+      { label: "But what really happened that night? — See the truth", next: "true_ending" }
+    ]
+  },
+
+  {
+    id: "ending_enzo",
+    location: "Interrogation Room B — Enzo's Second Visit",
+    character: { icon: "🧒", name: "Enzo Wong", role: "Age 7 — Final interview" },
+    text: `You brought Enzo back.
+
+A fragile kid, who had come to depend on his teddy bear, who screamed and shouted when it was taken away from him, that’s what Enzo stands to be. 
+
+The little boy in a blue shirt walked into the room with his teddy bear in hand. He pushed his body onto the chair across me and looked down at his bear. 
+
+“Hi Enzo, do you know why you’re back here?" I asked, and he remained quiet as he combed through the brown fur on his bear. 
+
+“Brownie right?” I asked, and that got him to look up at me, “that's the name of the little friend in your arms.”
+
+“Did Brownie always have a missing eye?” I asked, noting that one of its eyes was gone, a dark brown button, the same button that was in Wallace’s bag along with Enzo’s stationery. 
+
+Enzo looked up at me and frowned, “No, I always take good care of him, Wallace is the one who stole him from me.” 
+
+Now, that piqued my interest. 
+
+“Oh? When did he steal Brownie?” 
+
+“He’s always been the bad guy you know? He keeps taking people’s things,” Enzo ranted, gripping tighter onto the bear. 
+
+“Why do you think so?”
+
+“Because he’s stupid! He stole Brownie from me in school when I fell asleep during recess,” Enzo slowly raised his voice, his 7 year old body seething with anger, “he put Brownie into his bag and that’s when the eye came out!” 
+
+I let Enzo rant on, talking about how he hated Wallace and how his colour pencils went missing. He went on about how everyone thinks Wallace is a bully and no one likes him. The story that stood out was when Enzo hugged his bear tightly, talking about how Wallace shouldn’t have stolen Brownie for fun and that teddy bears have feelings too. 
+
+When Enzo had calmed down from telling the stories, I looked at him and asked again. 
+
+“Enzo, how did Wallace fall that night at the playground?” 
+
+Enzo went still despite his rage, he looked back down at the teddy bear, clearly frowning, “daddy told me not to say.” 
+
+“Why not?” 
+
+He shook his head, “mummy and daddy will fight again, I can’t tell you.” 
+
+“Do you love your parents Enzo?” I asked, and for the first time that day, I saw his lips curve into a small smile. 
+
+“Yes, a lot, especially daddy,” he smiled looking at his teddy bear, brushing through the fur with his fingers. 
+
+“Enzo, if you don’t tell me anything about that night, your daddy might have to leave for a very long time,” I slowly explained, “he will go to jail, you won’t see him for many years.” 
+
+Enzo’s face went pale and his eyes went glassy. I could see the contemplation in his eyes as he sniffed and looked at me and the bear. 
+
+“I… I can’t tell you, can Brownie tell you instead?” Enzo whimpered as a last resort. 
+
+Brownie? The teddy bear?
+
+I watched as he placed the bear on the table with his two small hands and gave it a small squeeze on its tummy. Static crackled through the quiet room, erupting from the bear’s stomach. The tension I felt could be cut with a knife, this could be it. The critical evidence to close this case. 
+
+‘...Give it back!... Come and get it!... W-Woah! Wait, Enzo! I’m sorry… ugh!... En…zo… ENZO! STOP IT!...’
+
+The sounds crackled after a few wails and cries, obviously belonging to Wallace. Josh’s voice also came through at the end, and scuffles were heard before the wailing had stopped. 
+
+I looked past the bear, to see Enzo hiding behind. He peeked out slowly as he looked guiltily at me, the way kids look when they’ve done something wrong. Enzo spoke softly as he looked at me. 
+
+“Daddy won’t go to jail right..?”`,
+    
+    choices: [
+      { label: "Play back the recording — hear what really happened that night", next: "true_ending" }
+    ]
+  },
+
+  /* ══════════════════════════════════════════════
+     TRUE ENDING
+  ══════════════════════════════════════════════ */
+  {
+    id: "true_ending",
+    location: "The Playground — Wednesday, 1 April 2026 · 8 P.M.",
+    character: { icon: "🧸", name: "The Truth", role: "Reconstructed from the recording" },
+    isTrueEnd: true,
+    endTitle: "The Truth, At Last",
+    endBody: "Enzo killed Wallace in a blind rage over the stolen bear. Josh arrived too late to stop it — but just in time to cover it up. He staged the scene, coached his son, and made the call. The recording in Brownie's seam captured everything. Josh was charged with perverting the course of justice. Enzo was remanded to a children's assessment home. Anna was told everything on a Tuesday evening. She didn't speak for three days. The case that Richard said would take an afternoon took six weeks.",
+    text: `"Enzoooooo."
+
+Wallace sang out to Enzo who was tearing up on the edge of a slide. The soft spoken boy had spent his entire day screaming and throwing tantrums when he found out his toy had gone missing after recess.
+
+"Go away Wallace," Enzo scowled as he rubbed his eyes.
+
+"What's wrong?" Wallace sat in front of Enzo on the rubber playground floor.
+
+"Brownie is gone," saying it made Enzo tear up again as he wiped his swollen eyes with the back of his small hands.
+
+Wallace watched his counterpart and tilted his head to peer under his hands. "Huh really? You're crying over this?" — and Enzo frowned at him before rolling his eyes.
+
+"You won't understand," Enzo muttered.
+
+"Maybe I can help though," Wallace replied, and stood up excitedly to sprint to the benches, digging through his bag.
+
+Josh watched the small kid sprint over as he continued talking through the phone, paying no attention to him. "Yes, so as we agreed earlier the website will be…"
+
+"Tadaaa," Wallace sang as he pulled Brownie out from behind his back.
+
+Enzo's face contorted from sadness, into happiness, then confusion. He instinctively reached out — and Wallace pulled it back, stepping backwards.
+
+"Oi…!" Enzo stood up. "Can you give it back?! And why is one eye missing?"
+
+"Nah, you're too attached to it, even my mum says it's weird," Wallace walked backwards, dodging Enzo's grasp.
+
+"Give it back…!" Enzo yelled, his rage building up slowly.
+
+"Come and get it!" Wallace laughed as he continued speed walking backwards — but tripped on the rubber flooring. "W-woah!"
+
+Wallace hit his head on the floor. It bounced back with a slight thud. He groaned as he gripped his head and rolled to the side in pain.
+
+It was a blur of rage when Enzo's hand reached for a sharp stone and held it high above his head. He felt nothing. His eyes only saw anger. He gripped the rock so hard his innocent knuckles turned white — and little did he know, it would soon be red.
+
+"Wait, Enzo!" Wallace screeched as he turned to push himself up. "I'm sorry — Ugh!"
+
+The sharp rock came down with savage force against Wallace's skull. A hollow, brutal crack. Wallace collapsed into the playground flooring.
+
+"I'm sorry… En… zo…" Wallace breathed his final words before closing his eyes.
+
+Enzo raised the rock again blindly, his eyes fixated on the red wound.
+
+"ENZO! STOP IT!" Josh roared as he sprinted over and grabbed Enzo's wrist, pulling the rock from his hands.
+
+Josh looked at the scene before him in horror. He scanned his surroundings quickly before squatting down to Enzo's eye level, hissing as he grabbed onto his shoulders.
+
+"Enzo…! W-Why would you do that? You shouldn't hurt anyone despite what they've done!"
+
+"He keeps taking my things," Enzo whimpered. "Brownie's eye is gone because he took it, my colour pencils, my crayons, everything!"
+
+"If he wakes up and tells everyone what you did, you'll be taken away from us. We won't see each other again," Josh tried to explain to his 7 year old son.
+
+"And if he doesn't wake up?"
+
+Josh stilled.
+
+“You’d have committed a crime, you’ll still be taken away from us,” Josh softly said, trying not to look at the fallen boy with a shimmering bloody wound on his head. It was then when Josh noticed: Wallace’s chest slowly rising and falling, and his soft whimpers. 
+
+"But he wouldn't tell everyone, right? If he doesn't wake up," Enzo said again, and Josh looked at the boy as if he had brought a monster into this world.
+
+Josh lowered his head and squeezed his eyes shut. He thought about the consequences, what the separation would mean for their family, and about Enzo's future. His wife would blame herself and him for years to come if Enzo ever entered a children's home. Anna had been unstable since the pregnancy. He couldn't bring himself to break the news to her. The cogs in his head turned slowly till they reached a conclusion, and he decided he had to take matters into his own hands. 
+
+He tightened his grip on Enzo's shoulders and looked down into his eyes.
+
+"Enzo. I'm going to do something, for you and mummy, okay?"
+
+Enzo nodded, his innocent eyes looking up to his dad.
+
+"DO NOT — if anyone asks — tell them the truth. Wallace tripped and hit his head on a rock. He fell. He was being mean, he took your toy, but you never hit him," Josh said frantically, scanning his surroundings once more.
+
+"Okay daddy."
+
+Josh stood up, looked at the fallen boy, and took the same rock from the floor. He placed it right under Wallace's head before turning his barely warm body around.
+
+"Enzo. Take Brownie, and don't step on the blood."
+
+Enzo moved quickly, swiftly taking Brownie from Wallace's hands and stepping back to the sidelines.
+
+Josh gripped the side of Wallace's small head. He couldn't cry — his wife would chide him for doing something so stupid while carrying out a critical task. He let out a shaky breath as his grip tightened.
+
+"I'm sorry. Rest in peace."
+
+Josh raised Wallace's head slightly and smashed the same wound into the sharp edge of the rock. Not so soft that it wouldn't kill. Not too hard that it would look like murder instead of a fall.
+
+He stood up, towering over Wallace's still body, before looking away.
+
+"Enzo. Take Wallace's bottle and pour the water onto daddy's hands."
+
+The father and son walked to the grass. They took turns washing their hands clean. When it was done, Josh whipped out his phone.
+
+"H-Hello police?" Josh spoke in a calculated, desperate tone. "My friend's son just fell and hit his head, I-I don't know what to do, please come quickly."`,
+    choices: []
+  }
+
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   ENGINE
+═══════════════════════════════════════════════════════════════ */
+
+const sceneMap = {};
+SCENES.forEach(s => sceneMap[s.id] = s);
+
+let playerName  = 'Detective';
+let collectedClues = [];
+let sceneCount  = 0;
+let typingTimer = null;
+let currentSceneId = SCENES[0].id;
+
+// Pool-question state per scene
+const askedQuestions = {};
+
+// Transcript log: { sceneId → { intro, qa: [{q, a}] } }
+const transcripts = {};
+
+// Which interviewees have been completed (for ordering Josh last)
+const completedInterviews = new Set();
+
+// The five non-Josh witnesses, in any order
+const WITNESS_POOL = [
+  { id: 'enzo_1',   label: '🧒 Enzo Wong (Age 7)',            end: 'enzo_end'    },
+  { id: 'eugene_1', label: '👨‍🏫 Eugene (Teacher)',             end: 'eugene_end'  },
+  { id: 'anna_1',   label: '👩 Anna Wong (Mother)',            end: 'anna_end'    },
+  { id: 'erica_1',  label: '😰 Erica Goh (Victim\'s Mother)', end: 'erica_end'   },
+  { id: 'sha_1',    label: '👵 Sharyanne Lim (Neighbour)',     end: 'sha_end'     },
+];
+
+/* ── Build dynamic interview choices ──
+   Called by scenes with choices:"post_interview" or "post_anna".
+   Shows remaining witnesses, locks Josh until all 5 done. */
+function buildInterviewChoices(sceneId) {
+  // Which witnesses are still not completed
+  const remaining = WITNESS_POOL.filter(w => !completedInterviews.has(w.end));
+
+  const allDone = remaining.length === 0;
+
+  const btns = [];
+
+  // Offer remaining witnesses
+  remaining.forEach(w => {
+    btns.push({ label: `Continue — Interrogate ${w.label.replace(/^..\s/,'')}`, next: w.id });
+  });
+
+  // Only offer Josh once every one of the 5 witnesses is done
+  if (allDone) {
+    btns.push({ label: '🧔 Continue — Interrogate Josh Wong (Father) [Final]', next: 'josh_1' });
+  }
+
+  return btns;
+}
+
+const $narrative   = document.getElementById('narrative');
+const $choices     = document.getElementById('choices');
+const $location    = document.getElementById('location-tag');
+const $charIcon    = document.getElementById('char-icon');
+const $charName    = document.getElementById('char-name');
+const $charRole    = document.getElementById('char-role');
+const $clueStrip   = document.getElementById('clue-strip');
+const $footerScene = document.getElementById('footer-scene');
+const $footerClues = document.getElementById('footer-clues');
+const $nbList      = document.getElementById('notebook-list');
+const $nbToggle    = document.getElementById('notebook-toggle');
+const $notebook    = document.getElementById('notebook');
+const $flash       = document.getElementById('flash');
+const $endScreen   = document.getElementById('end-screen');
+const $endTitle    = document.getElementById('end-title');
+const $endBody     = document.getElementById('end-body');
+const $endRestart  = document.getElementById('end-restart');
+const $reviewToggle = document.getElementById('review-toggle');
+const $reviewPanel  = document.getElementById('review-panel');
+const $reviewClose  = document.getElementById('review-close');
+const $reviewTabs   = document.getElementById('review-tabs');
+const $reviewContent= document.getElementById('review-content');
+
+/* ── Tokens ── */
+function applyTokens(str) {
+  if (!str) return str;
+  return str
+    .replace(/\{\{PLAYER_NAME\}\}/g, playerName)
+    .replace(/\{\{DETECTIVE\}\}/g, `Detective ${playerName}`);
+}
+
+/* ── Clues ── */
+function addClue(clue) {
+  if (!clue || collectedClues.includes(clue)) return;
+  collectedClues.push(clue);
+  const tag = document.createElement('span');
+  tag.className = 'clue-tag';
+  tag.textContent = clue;
+  $clueStrip.appendChild(tag);
+  if ($nbList.querySelector('li em')) $nbList.innerHTML = '';
+  const li = document.createElement('li');
+  li.textContent = clue;
+  $nbList.appendChild(li);
+  $footerClues.textContent = `Clues: ${collectedClues.length}`;
+}
+
+/* ── Typewriter with instant-complete on click ── */
+let pendingText      = '';
+let pendingAppend    = false;
+let pendingDone      = null;
+let pendingTypedSoFar = 0;   // tracks chars of pendingText already rendered
+
+function typeText(text, onDone, append = false) {
+  clearTimeout(typingTimer);
+  pendingText        = text;
+  pendingAppend      = append;
+  pendingDone        = onDone;
+  pendingTypedSoFar  = 0;
+
+  if (!append) $narrative.innerHTML = '';
+
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  let i = 0;
+
+  function tick() {
+    if (i < text.length) {
+      if (!append) {
+        $narrative.textContent = text.slice(0, i + 1);
+      } else {
+        $narrative.querySelector('.cursor')?.remove();
+        $narrative.appendChild(document.createTextNode(text[i]));
+      }
+      $narrative.appendChild(cursor);
+      i++;
+      pendingTypedSoFar = i;
+      const ch = text[i - 1];
+      const delay = ch === '\n' ? 35 : (ch === '.' || ch === '?') ? 28 : 12;
+      typingTimer = setTimeout(tick, delay);
+    } else {
+      cursor.remove();
+      pendingDone = null;
+      if (onDone) onDone();
+    }
+  }
+  tick();
+}
+
+/* Click to COMPLETE (not skip) the current typewriter run */
+function finishTypingNow() {
+  if (!typingTimer) return false;
+  clearTimeout(typingTimer);
+  typingTimer = null;
+  $narrative.querySelector('.cursor')?.remove();
+
+  if (!pendingAppend) {
+    $narrative.textContent = pendingText;
+  } else {
+    // Append only the remaining characters that haven't been typed yet
+    const remaining = pendingText.slice(pendingTypedSoFar);
+    if (remaining) $narrative.appendChild(document.createTextNode(remaining));
+  }
+
+  const cb = pendingDone;
+  pendingDone = null;
+  if (cb) cb();
+  return true;
+}
+
+/* ── Clue strip re-render ── */
+function reRenderClueStrip() {
+  $clueStrip.innerHTML = '';
+  collectedClues.forEach(c => {
+    const tag = document.createElement('span');
+    tag.className = 'clue-tag';
+    tag.textContent = c;
+    $clueStrip.appendChild(tag);
+  });
+}
+
+/* ── Scene entry ── */
+function showScene(id) {
+  const scene = sceneMap[id];
+  if (!scene) { console.warn('Scene not found:', id); return; }
+  currentSceneId = id;
+
+  sceneCount++;
+  $footerScene.textContent = `Scene ${sceneCount}`;
+  $clueStrip.innerHTML = '';
+
+  if (scene.title) document.getElementById('game-title').textContent = scene.title;
+  if (scene.caseNo) document.getElementById('case-no').textContent = scene.caseNo;
+
+  $location.textContent = scene.location || '';
+  $charIcon.textContent = scene.character?.icon || '';
+  $charName.textContent = applyTokens(scene.character?.name || '');
+  $charRole.textContent = applyTokens(scene.character?.role || '');
+
+  if (scene.clue) addClue(scene.clue);
+  reRenderClueStrip();
+
+  $choices.innerHTML = '';
+  $narrative.innerHTML = '';
+
+  if (scene.questions) {
+    // Pool scene — init transcript entry if needed
+    if (!askedQuestions[id]) askedQuestions[id] = new Set();
+    if (!transcripts[id]) transcripts[id] = { label: scene.character?.name || id, intro: applyTokens(scene.intro || ''), qa: [] };
+    typeText(applyTokens(scene.intro || ''), () => { renderPoolChoices(scene); });
+  } else {
+    // Linear scene
+    typeText(applyTokens(scene.text || ''), () => {
+      if (scene.isEnd) { setTimeout(() => triggerEnd(scene), 1200); return; }
+      if (scene.isTrueEnd) {
+        renderTrueEndButton(scene);
+        return;
+      }
+      const choices = resolveChoices(scene);
+      renderLinearChoices(choices);
+    });
+  }
+}
+
+/* Resolve choices — handles dynamic "post_interview" string */
+function resolveChoices(scene) {
+  if (Array.isArray(scene.choices)) return scene.choices;
+  if (scene.choices === 'post_interview' || scene.choices === 'post_anna') {
+    // Mark current scene's parent witness as done
+    WITNESS_POOL.forEach(w => { if (w.end === scene.id) completedInterviews.add(w.end); });
+    return buildInterviewChoices(scene.id);
+  }
+  return [];
+}
+
+/* ── Pool question rendering ── */
+function renderPoolChoices(scene) {
+  // Clear only the question buttons, keep wrapup if present
+  const existingWrapup = $choices.querySelector('.wrapup-btn');
+  $choices.innerHTML = '';
+  if (existingWrapup) $choices.appendChild(existingWrapup);
+
+  const asked = askedQuestions[scene.id];
+  const remaining = scene.questions.filter(q => !asked.has(q.id));
+
+  if (remaining.length === 0) {
+    addWrapUpButton(scene);
+    return;
+  }
+
+  remaining.forEach((q, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.dataset.qid = q.id;
+    btn.innerHTML = `<span class="opt-num">${i + 1}.</span>${applyTokens(q.label)}`;
+    btn.style.opacity = '0';
+    btn.style.transform = 'translateY(8px)';
+    btn.addEventListener('click', () => askQuestion(scene, q, btn));
+    $choices.insertBefore(btn, existingWrapup || null);
+    setTimeout(() => {
+      btn.style.transition = 'opacity 0.3s, transform 0.3s';
+      btn.style.opacity = '1';
+      btn.style.transform = 'none';
+    }, i * 70 + 40);
+  });
+}
+
+function askQuestion(scene, q, btn) {
+  $choices.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+  askedQuestions[scene.id].add(q.id);
+  if (q.clue) addClue(q.clue);
+
+  const questionLine = `\n\n— ${applyTokens(q.label)}\n\n${applyTokens(q.text)}`;
+
+  // Log to transcript
+  if (transcripts[scene.id]) {
+    transcripts[scene.id].qa.push({ q: applyTokens(q.label), a: applyTokens(q.text) });
+  }
+
+  btn.style.transition = 'opacity 0.25s, transform 0.25s';
+  btn.style.opacity = '0';
+  btn.style.transform = 'translateX(-12px)';
+  setTimeout(() => {
+    btn.remove();
+    // Re-number remaining
+    $choices.querySelectorAll('.choice-btn:not(.wrapup-btn)').forEach((b, i) => {
+      const num = b.querySelector('.opt-num');
+      if (num) num.textContent = `${i + 1}.`;
+    });
+  }, 260);
+
+  const isEmpty = $narrative.textContent.trim().length === 0;
+  typeText(isEmpty ? questionLine.trimStart() : questionLine, () => {
+    $choices.querySelectorAll('.choice-btn').forEach(b => b.disabled = false);
+    checkAllAsked(scene);
+    updateReviewPanel();
+  }, !isEmpty);
+
+  $dossier.scrollTop = $dossier.scrollHeight;
+}
+
+function checkAllAsked(scene) {
+  const asked = askedQuestions[scene.id];
+  if (scene.questions.every(q => asked.has(q.id))) addWrapUpButton(scene);
+}
+
+function addWrapUpButton(scene) {
+  if ($choices.querySelector('.wrapup-btn')) return;
+  const btn = document.createElement('button');
+  btn.className = 'choice-btn wrapup-btn';
+  btn.style.borderColor = 'var(--red)';
+  btn.style.marginTop = '8px';
+  btn.innerHTML = `<span class="opt-num">→</span>${applyTokens(scene.nextLabel || 'Wrap up — move on')}`;
+  btn.style.opacity = '0';
+  btn.addEventListener('click', () => transition(scene.next));
+  $choices.appendChild(btn);
+  setTimeout(() => { btn.style.transition = 'opacity 0.4s'; btn.style.opacity = '1'; }, 80);
+}
+
+/* ── True Ending reveal button ── */
+function renderTrueEndButton(scene) {
+  $choices.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'choice-btn';
+  btn.style.borderColor = 'var(--red)';
+  btn.style.marginTop = '8px';
+  btn.innerHTML = `<span class="opt-num">→</span>Close the case — see the verdict`;
+  btn.style.opacity = '0';
+  btn.addEventListener('click', () => {
+    btn.disabled = true;
+    triggerEnd(scene);
+  });
+  $choices.appendChild(btn);
+  setTimeout(() => { btn.style.transition = 'opacity 0.5s'; btn.style.opacity = '1'; }, 200);
+}
+
+/* ── Linear choices ── */
+function renderLinearChoices(choices) {
+  $choices.innerHTML = '';
+  if (!choices || choices.length === 0) return;
+  choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="opt-num">${i + 1}.</span>${applyTokens(c.label)}`;
+    btn.addEventListener('click', () => transition(c.next));
+    $choices.appendChild(btn);
+    btn.style.opacity = '0';
+    btn.style.transform = 'translateY(8px)';
+    setTimeout(() => {
+      btn.style.transition = 'opacity 0.3s, transform 0.3s';
+      btn.style.opacity = '1';
+      btn.style.transform = 'none';
+    }, i * 80 + 40);
+  });
+}
+
+/* ── Transitions ── */
+function transition(nextId) {
+  $flash.classList.add('active');
+  clearTimeout(typingTimer);
+  setTimeout(() => {
+    showScene(nextId);
+    $flash.classList.remove('active');
+  }, 280);
+}
+
+function triggerEnd(scene) {
+  $endTitle.textContent = applyTokens(scene.endTitle || 'The End');
+  $endBody.textContent  = applyTokens(scene.endBody  || '');
+  $endScreen.classList.add('visible');
+}
+
+/* ── Review panel ── */
+let activeReviewTab = null;
+
+function updateReviewPanel() {
+  // Rebuild tabs
+  $reviewTabs.innerHTML = '';
+  const ids = Object.keys(transcripts);
+  if (ids.length === 0) {
+    $reviewContent.innerHTML = '<p class="review-empty">No interviews completed yet.</p>';
+    return;
+  }
+
+  ids.forEach(id => {
+    const t = transcripts[id];
+    const tab = document.createElement('button');
+    tab.className = 'review-tab' + (id === activeReviewTab ? ' active' : '');
+    tab.textContent = (t.label || id).split(' ')[0]; // first name
+    tab.addEventListener('click', () => { activeReviewTab = id; updateReviewPanel(); });
+    $reviewTabs.appendChild(tab);
+  });
+
+  if (!activeReviewTab || !transcripts[activeReviewTab]) {
+    activeReviewTab = ids[0];
+  }
+
+  const t = transcripts[activeReviewTab];
+  $reviewContent.innerHTML = '';
+
+  if (t.intro) {
+    const introDiv = document.createElement('div');
+    introDiv.className = 'review-intro';
+    introDiv.textContent = t.intro;
+    $reviewContent.appendChild(introDiv);
+  }
+
+  if (t.qa.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'review-empty';
+    empty.textContent = 'No questions asked yet.';
+    $reviewContent.appendChild(empty);
+    return;
+  }
+
+  t.qa.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'review-entry';
+    const qDiv = document.createElement('div');
+    qDiv.className = 'review-q';
+    qDiv.textContent = `— ${entry.q}`;
+    const aDiv = document.createElement('div');
+    aDiv.className = 'review-a';
+    aDiv.textContent = entry.a.replace(/\\n/g, '\n');
+    div.appendChild(qDiv);
+    div.appendChild(aDiv);
+    $reviewContent.appendChild(div);
+  });
+}
+
+$reviewToggle.addEventListener('click', () => {
+  $reviewPanel.classList.toggle('open');
+  $notebook.classList.remove('open');
+  if ($reviewPanel.classList.contains('open')) updateReviewPanel();
+});
+$reviewClose.addEventListener('click', () => $reviewPanel.classList.remove('open'));
+
+/* ── Restart ── */
+function restart() {
+  collectedClues = [];
+  sceneCount = 0;
+  Object.keys(askedQuestions).forEach(k => delete askedQuestions[k]);
+  Object.keys(transcripts).forEach(k => delete transcripts[k]);
+  completedInterviews.clear();
+  activeReviewTab = null;
+  $nbList.innerHTML = '<li><em>No clues yet…</em></li>';
+  $endScreen.classList.remove('visible');
+  $clueStrip.innerHTML = '';
+  $footerClues.textContent = 'Clues: 0';
+  document.getElementById('game-title').textContent = 'The Wallace Case';
+  const ns = document.getElementById('name-screen');
+  const inp = document.getElementById('player-name-input');
+  inp.value = '';
+  document.getElementById('name-submit').disabled = true;
+  ns.classList.remove('hidden');
+  ns.style.display = 'flex';
+  setTimeout(() => inp.focus(), 300);
+}
+
+/* ── Name screen ── */
+(function () {
+  const ns  = document.getElementById('name-screen');
+  const inp = document.getElementById('player-name-input');
+  const btn = document.getElementById('name-submit');
+
+  inp.addEventListener('input', () => { btn.disabled = inp.value.trim().length === 0; });
+
+  function beginGame() {
+    const raw = inp.value.trim();
+    if (!raw) return;
+    playerName = raw;
+    document.querySelector('#notebook h3').textContent = `🔍 ${playerName}'s Notes`;
+    ns.classList.add('hidden');
+    setTimeout(() => { ns.style.display = 'none'; }, 420);
+    showScene(SCENES[0].id);
+  }
+
+  btn.addEventListener('click', beginGame);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') beginGame(); });
+  setTimeout(() => inp.focus(), 400);
+})();
+
+/* ── Notebook toggle ── */
+$nbToggle.addEventListener('click', () => {
+  $notebook.classList.toggle('open');
+  $reviewPanel.classList.remove('open');
+});
+document.addEventListener('click', e => {
+  if (!$notebook.contains(e.target) && e.target !== $nbToggle) $notebook.classList.remove('open');
+  if (!$reviewPanel.contains(e.target) && e.target !== $reviewToggle && e.target !== $reviewClose)
+    $reviewPanel.classList.remove('open');
+});
+
+/* ── Click narrative to COMPLETE typing ── */
+const $dossier = document.getElementById('dossier');
+$narrative.style.cursor = 'pointer';
+$narrative.title = 'Click to finish text';
+$narrative.addEventListener('click', () => { finishTypingNow(); });
+
+/* ── Keyboard shortcuts ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { $reviewPanel.classList.remove('open'); $notebook.classList.remove('open'); }
+  const btns = [...document.querySelectorAll('.choice-btn:not(:disabled)')];
+  const n = parseInt(e.key);
+  if (!isNaN(n) && n >= 1 && n <= btns.length) btns[n-1].click();
+});
+
+$endRestart.addEventListener('click', restart);
+
+document.getElementById('end-close').addEventListener('click', () => {
+  $endScreen.classList.remove('visible');
+  // Re-enable the reveal button if it exists so player can open it again
+  const revealBtn = $choices.querySelector('.choice-btn');
+  if (revealBtn) revealBtn.disabled = false;
+});
+</script>
+</body>
+</html>
